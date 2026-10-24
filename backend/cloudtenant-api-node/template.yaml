@@ -1,0 +1,158 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  CloudTenant — Multi-Tenant SaaS Management Platform
+  Serverless backend with Node.js 24.x, Amazon Cognito, API Gateway, and DynamoDB.
+
+Globals:
+  Function:
+    Timeout: 15
+    MemorySize: 256
+    Runtime: nodejs24.x
+    Architectures:
+      - x86_64
+
+Parameters:
+  TableName:
+    Type: String
+    Default: CloudTenantData
+    Description: DynamoDB table name for multi-tenant data storage
+
+Resources:
+  # =========================================================================
+  # 1. DynamoDB: Single-Table Architecture for Multi-Tenant Isolation
+  # =========================================================================
+  CloudTenantTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  # =========================================================================
+  # 2. Amazon Cognito: User Directory & Authentication
+  # =========================================================================
+  CloudTenantUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${AWS::StackName}-user-pool"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+  CloudTenantUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${AWS::StackName}-web-client"
+      UserPoolId: !Ref CloudTenantUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+
+  # =========================================================================
+  # 3. Amazon API Gateway: REST API with Cognito JWT Authorizer & CORS
+  # =========================================================================
+  CloudTenantApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuth
+        Authorizers:
+          CognitoAuth:
+            UserPoolArn: !GetAtt CloudTenantUserPool.Arn
+            Identity:
+              Header: Authorization
+
+  # =========================================================================
+  # 4. AWS Lambda: Node.js 24.x Multi-Tenant Backend Service
+  # =========================================================================
+  CloudTenantFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: hello-world/
+      Handler: app.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref CloudTenantTable
+          COGNITO_USER_POOL_ID: !Ref CloudTenantUserPool
+          COGNITO_CLIENT_ID: !Ref CloudTenantUserPoolClient
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CloudTenantTable
+      Events:
+        RootRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CloudTenantApi
+            Path: /
+            Method: ANY
+        ProxyRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CloudTenantApi
+            Path: /{proxy+}
+            Method: ANY
+
+# =========================================================================
+# Outputs: CloudFormation Stack Exports for Frontend and Verification
+# =========================================================================
+Outputs:
+  Region:
+    Description: "AWS Deployment Region"
+    Value: !Ref AWS::Region
+
+  ApiBaseUrl:
+    Description: "API Gateway Base URL (Prod)"
+    Value: !Sub "https://${CloudTenantApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod"
+
+  UserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref CloudTenantUserPool
+
+  UserPoolClientId:
+    Description: "Cognito Web App Client ID"
+    Value: !Ref CloudTenantUserPoolClient
+
+  DynamoDBTableName:
+    Description: "DynamoDB Table Name"
+    Value: !Ref CloudTenantTable
+
+  LambdaFunctionArn:
+    Description: "CloudTenant Lambda Function ARN"
+    Value: !GetAtt CloudTenantFunction.Arn

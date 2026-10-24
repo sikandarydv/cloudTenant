@@ -1,0 +1,18 @@
+{
+  "name": "cloudtenant-api",
+  "version": "1.0.0",
+  "description": "CloudTenant Multi-Tenant SaaS Backend Service",
+  "main": "app.mjs",
+  "type": "module",
+  "scripts": {
+    "test": "mocha tests/unit/"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^10.2.0"
+  }
+}
