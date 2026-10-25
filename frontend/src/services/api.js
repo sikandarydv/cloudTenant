@@ -12,6 +12,15 @@ const USER_POOL_CLIENT_ID =
 // Live cloud backend is configured
 export const isCloudConfigured = Boolean(API_BASE_URL && USER_POOL_ID && USER_POOL_CLIENT_ID);
 
+// Helper to determine if current session is using real AWS Cognito or offline demo persona
+export function isLiveSession(useLiveCloud = true) {
+  const user = getStoredUser();
+  if (!user || user.mode === 'demo') {
+    return false;
+  }
+  return Boolean(useLiveCloud && isCloudConfigured);
+}
+
 const STORAGE_KEY_AUTH = 'cloudtenant_auth_user';
 const STORAGE_KEY_TENANTS = 'cloudtenant_demo_tenants';
 const STORAGE_KEY_PROJECTS = 'cloudtenant_demo_projects';
@@ -179,7 +188,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 // =============================================================================
 
 export async function getTenants(useLiveCloud = true) {
-  if (useLiveCloud && isCloudConfigured) {
+  if (isLiveSession(useLiveCloud)) {
     const res = await apiRequest('/tenants', 'GET');
     return res.tenants || [];
   }
@@ -191,7 +200,7 @@ export async function getTenants(useLiveCloud = true) {
 }
 
 export async function createTenant({ name, description, plan }, useLiveCloud = true) {
-  if (useLiveCloud && isCloudConfigured) {
+  if (isLiveSession(useLiveCloud)) {
     const res = await apiRequest('/tenants', 'POST', { name, description, plan });
     return res.tenant;
   }
@@ -219,7 +228,7 @@ export async function createTenant({ name, description, plan }, useLiveCloud = t
 // =============================================================================
 
 export async function getProjects(tenantId, useLiveCloud = true) {
-  if (useLiveCloud && isCloudConfigured) {
+  if (isLiveSession(useLiveCloud)) {
     const res = await apiRequest(`/tenants/${tenantId}/projects`, 'GET');
     return res.projects || [];
   }
@@ -240,7 +249,7 @@ export async function getProjects(tenantId, useLiveCloud = true) {
 }
 
 export async function createProject(tenantId, projectData, useLiveCloud = true) {
-  if (useLiveCloud && isCloudConfigured) {
+  if (isLiveSession(useLiveCloud)) {
     const res = await apiRequest(`/tenants/${tenantId}/projects`, 'POST', projectData);
     return res.project;
   }
@@ -277,7 +286,7 @@ export async function createProject(tenantId, projectData, useLiveCloud = true) 
 }
 
 export async function updateProject(tenantId, projectId, updateData, useLiveCloud = true) {
-  if (useLiveCloud && isCloudConfigured) {
+  if (isLiveSession(useLiveCloud)) {
     const res = await apiRequest(`/tenants/${tenantId}/projects/${projectId}`, 'PUT', updateData);
     return res.project;
   }
@@ -311,7 +320,7 @@ export async function updateProject(tenantId, projectId, updateData, useLiveClou
 }
 
 export async function deleteProject(tenantId, projectId, useLiveCloud = true) {
-  if (useLiveCloud && isCloudConfigured) {
+  if (isLiveSession(useLiveCloud)) {
     return await apiRequest(`/tenants/${tenantId}/projects/${projectId}`, 'DELETE');
   }
 
@@ -335,7 +344,7 @@ export async function deleteProject(tenantId, projectId, useLiveCloud = true) {
 // ISOLATION ATTACK SIMULATOR (VIVA EVALUATION TOOL)
 // =============================================================================
 export async function simulateCrossTenantAttack(targetTenantId, useLiveCloud = true) {
-  if (useLiveCloud && isCloudConfigured) {
+  if (isLiveSession(useLiveCloud)) {
     try {
       await apiRequest(`/tenants/${targetTenantId}/projects`, 'GET');
       return {
