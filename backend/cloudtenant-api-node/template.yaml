@@ -92,11 +92,25 @@ Resources:
         AllowOrigin: "'*'"
       Auth:
         DefaultAuthorizer: CognitoAuth
+        AddDefaultAuthorizerToCorsPreflight: false
         Authorizers:
           CognitoAuth:
             UserPoolArn: !GetAtt CloudTenantUserPool.Arn
             Identity:
               Header: Authorization
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
 
   # =========================================================================
   # 4. AWS Lambda: Node.js 24.x Multi-Tenant Backend Service
