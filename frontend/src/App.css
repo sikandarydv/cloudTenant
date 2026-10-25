@@ -295,12 +295,49 @@ body {
   margin-top: 6px;
 }
 
+.examiner-tools-accordion {
+  margin-top: 24px;
+  border-top: 1px dashed var(--border-color);
+  padding-top: 14px;
+  text-align: center;
+}
+
+.btn-toggle-examiner {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.btn-toggle-examiner:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
 .demo-personas-box {
   background: #f8fafc;
   border: 1px dashed #cbd5e1;
   border-radius: var(--radius-md);
   padding: 12px;
-  margin-bottom: 20px;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.onboarding-card {
+  max-width: 600px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+.onboarding-text {
+  color: var(--text-muted);
+  font-size: 15px;
+  margin: 12px 0 24px 0;
+  line-height: 1.6;
 }
 
 .demo-title {

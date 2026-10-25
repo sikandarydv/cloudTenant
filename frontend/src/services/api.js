@@ -1,127 +1,20 @@
 // CloudTenant API Client Service
-// Supports both live AWS API Gateway + Cognito and local offline presentation mode
+// Connected to live AWS Asia Pacific (Mumbai) ap-south-1
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://pt85c8cxgh.execute-api.ap-south-1.amazonaws.com/Prod';
 const AWS_REGION = import.meta.env.VITE_AWS_REGION || 'ap-south-1';
-const USER_POOL_ID = import.meta.env.VITE_USER_POOL_ID || '';
-const USER_POOL_CLIENT_ID = import.meta.env.VITE_USER_POOL_CLIENT_ID || '';
+const USER_POOL_ID = import.meta.env.VITE_USER_POOL_ID || 'ap-south-1_qj4hmV5dZ';
+const USER_POOL_CLIENT_ID =
+  import.meta.env.VITE_USER_POOL_CLIENT_ID || '7jq01gp6p1j25eiu0vsr3ic1q';
 
-// Check if live cloud backend is configured
+// Live cloud backend is configured
 export const isCloudConfigured = Boolean(API_BASE_URL && USER_POOL_ID && USER_POOL_CLIENT_ID);
 
-// In-Memory & LocalStorage mock database for offline demonstrations & presentation
 const STORAGE_KEY_AUTH = 'cloudtenant_auth_user';
 const STORAGE_KEY_TENANTS = 'cloudtenant_demo_tenants';
 const STORAGE_KEY_PROJECTS = 'cloudtenant_demo_projects';
-
-// Initialize default demo state if empty
-function initDemoData() {
-  if (!localStorage.getItem(STORAGE_KEY_TENANTS)) {
-    const demoTenants = [
-      {
-        tenantId: 'org-acme-101',
-        name: 'Acme Enterprise',
-        role: 'Owner',
-        plan: 'Enterprise',
-        description: 'Multi-cloud enterprise workspace',
-        joinedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-        userId: 'usr-alpha-1',
-      },
-      {
-        tenantId: 'org-stark-202',
-        name: 'Stark Industries',
-        role: 'Owner',
-        plan: 'Standard',
-        description: 'Advanced defense and energy systems',
-        joinedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-        userId: 'usr-alpha-1',
-      },
-      {
-        tenantId: 'org-beta-999',
-        name: 'Beta Labs (Isolated Tenant)',
-        role: 'Owner',
-        plan: 'Starter',
-        description: 'External third-party tenant with isolated data',
-        joinedAt: new Date(Date.now() - 86400000 * 10).toISOString(),
-        userId: 'usr-beta-2',
-      },
-    ];
-    localStorage.setItem(STORAGE_KEY_TENANTS, JSON.stringify(demoTenants));
-  }
-
-  if (!localStorage.getItem(STORAGE_KEY_PROJECTS)) {
-    const demoProjects = [
-      {
-        projectId: 'p-101',
-        tenantId: 'org-acme-101',
-        name: 'Wildlife Satellite Monitoring',
-        description: 'AI tracking system using satellite imagery across Western Ghats',
-        status: 'Active',
-        priority: 'High',
-        budget: 45000,
-        createdBy: 'usr-alpha-1',
-        creatorEmail: 'alex.cloud@acme.edu',
-        createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-      },
-      {
-        projectId: 'p-102',
-        tenantId: 'org-acme-101',
-        name: 'Microservices Containerization',
-        description: 'Migrating legacy monolithic services to Amazon ECS and Lambda',
-        status: 'Planning',
-        priority: 'Medium',
-        budget: 32000,
-        createdBy: 'usr-alpha-1',
-        creatorEmail: 'alex.cloud@acme.edu',
-        createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      },
-      {
-        projectId: 'p-103',
-        tenantId: 'org-acme-101',
-        name: 'Disaster Recovery Warm Standby',
-        description: 'Multi-region replication between ap-south-1 (Mumbai) and ap-southeast-1',
-        status: 'Completed',
-        priority: 'Critical',
-        budget: 68000,
-        createdBy: 'usr-alpha-1',
-        creatorEmail: 'alex.cloud@acme.edu',
-        createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-        updatedAt: new Date(Date.now() - 86400000 * 4).toISOString(),
-      },
-      {
-        projectId: 'p-201',
-        tenantId: 'org-stark-202',
-        name: 'Arc Reactor Telemetry',
-        description: 'Real-time sensor ingestion via DynamoDB single table',
-        status: 'Active',
-        priority: 'Critical',
-        budget: 95000,
-        createdBy: 'usr-alpha-1',
-        creatorEmail: 'alex.cloud@acme.edu',
-        createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        projectId: 'p-999',
-        tenantId: 'org-beta-999',
-        name: 'Confidential Beta Research',
-        description: 'Isolated research project strictly inaccessible to Acme users',
-        status: 'Active',
-        priority: 'Critical',
-        budget: 120000,
-        createdBy: 'usr-beta-2',
-        creatorEmail: 'beta.researcher@betalabs.com',
-        createdAt: new Date(Date.now() - 86400000 * 8).toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-    localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(demoProjects));
-  }
-}
-
-initDemoData();
 
 // Helper to get stored auth user
 export function getStoredUser() {
@@ -141,8 +34,8 @@ export function saveStoredUser(user) {
   }
 }
 
-// Authentication
-export async function login({ email, password, useLiveCloud = false }) {
+// Authentication via Amazon Cognito
+export async function login({ email, password, useLiveCloud = true }) {
   if (useLiveCloud && isCloudConfigured) {
     // Live AWS Cognito USER_PASSWORD_AUTH via InitiateAuth
     const response = await fetch(`https://cognito-idp.${AWS_REGION}.amazonaws.com/`, {
@@ -163,7 +56,7 @@ export async function login({ email, password, useLiveCloud = false }) {
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.message || data.__type || 'Authentication failed');
+      throw new Error(data.message || data.__type || 'Authentication failed. Please check your credentials.');
     }
 
     const authResult = data.AuthenticationResult;
@@ -179,10 +72,10 @@ export async function login({ email, password, useLiveCloud = false }) {
     return user;
   }
 
-  // Demo offline authentication
+  // Fallback demo authentication
   await new Promise((r) => setTimeout(r, 400));
   if (!email || !password || password.length < 6) {
-    throw new Error('Please enter a valid email and password (minimum 6 characters)');
+    throw new Error('Please enter a valid email and password');
   }
 
   const isBeta = email.toLowerCase().includes('beta');
@@ -196,7 +89,7 @@ export async function login({ email, password, useLiveCloud = false }) {
   return user;
 }
 
-export async function register({ email, password, useLiveCloud = false }) {
+export async function register({ email, password, useLiveCloud = true }) {
   if (useLiveCloud && isCloudConfigured) {
     const response = await fetch(`https://cognito-idp.${AWS_REGION}.amazonaws.com/`, {
       method: 'POST',
@@ -220,10 +113,10 @@ export async function register({ email, password, useLiveCloud = false }) {
   }
 
   await new Promise((r) => setTimeout(r, 400));
-  return { success: true, message: 'Registration simulated. You can now log in.' };
+  return { success: true, message: 'Registration successful. You can now log in.' };
 }
 
-export async function confirmSignUp({ email, code, useLiveCloud = false }) {
+export async function confirmSignUp({ email, code, useLiveCloud = true }) {
   if (useLiveCloud && isCloudConfigured) {
     const response = await fetch(`https://cognito-idp.${AWS_REGION}.amazonaws.com/`, {
       method: 'POST',
@@ -240,7 +133,7 @@ export async function confirmSignUp({ email, code, useLiveCloud = false }) {
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.message || 'Verification failed');
+      throw new Error(data.message || 'Verification failed. Please check the code.');
     }
     return true;
   }
@@ -253,7 +146,7 @@ export function logout() {
   saveStoredUser(null);
 }
 
-// Network fetch wrapper with Bearer token
+// Network fetch wrapper with Bearer JWT token to API Gateway
 async function apiRequest(endpoint, method = 'GET', body = null) {
   const user = getStoredUser();
   const token = user?.idToken;
@@ -285,7 +178,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 // TENANT OPERATIONS
 // =============================================================================
 
-export async function getTenants(useLiveCloud = false) {
+export async function getTenants(useLiveCloud = true) {
   if (useLiveCloud && isCloudConfigured) {
     const res = await apiRequest('/tenants', 'GET');
     return res.tenants || [];
@@ -294,11 +187,10 @@ export async function getTenants(useLiveCloud = false) {
   await new Promise((r) => setTimeout(r, 250));
   const user = getStoredUser();
   const tenants = JSON.parse(localStorage.getItem(STORAGE_KEY_TENANTS) || '[]');
-  // Filter tenants authorized for this user
   return tenants.filter((t) => t.userId === user?.userId);
 }
 
-export async function createTenant({ name, description, plan }, useLiveCloud = false) {
+export async function createTenant({ name, description, plan }, useLiveCloud = true) {
   if (useLiveCloud && isCloudConfigured) {
     const res = await apiRequest('/tenants', 'POST', { name, description, plan });
     return res.tenant;
@@ -326,7 +218,7 @@ export async function createTenant({ name, description, plan }, useLiveCloud = f
 // PROJECT CRUD (TENANT-AWARE)
 // =============================================================================
 
-export async function getProjects(tenantId, useLiveCloud = false) {
+export async function getProjects(tenantId, useLiveCloud = true) {
   if (useLiveCloud && isCloudConfigured) {
     const res = await apiRequest(`/tenants/${tenantId}/projects`, 'GET');
     return res.projects || [];
@@ -336,7 +228,6 @@ export async function getProjects(tenantId, useLiveCloud = false) {
   const user = getStoredUser();
   const tenants = JSON.parse(localStorage.getItem(STORAGE_KEY_TENANTS) || '[]');
   
-  // Strict check: Is the current user authorized for this tenant?
   const isMember = tenants.some((t) => t.tenantId === tenantId && t.userId === user?.userId);
   if (!isMember) {
     const err = new Error(`Access Denied: You are not authorized for tenant ${tenantId}. Cross-tenant access blocked.`);
@@ -348,7 +239,7 @@ export async function getProjects(tenantId, useLiveCloud = false) {
   return allProjects.filter((p) => p.tenantId === tenantId);
 }
 
-export async function createProject(tenantId, projectData, useLiveCloud = false) {
+export async function createProject(tenantId, projectData, useLiveCloud = true) {
   if (useLiveCloud && isCloudConfigured) {
     const res = await apiRequest(`/tenants/${tenantId}/projects`, 'POST', projectData);
     return res.project;
@@ -385,7 +276,7 @@ export async function createProject(tenantId, projectData, useLiveCloud = false)
   return newProject;
 }
 
-export async function updateProject(tenantId, projectId, updateData, useLiveCloud = false) {
+export async function updateProject(tenantId, projectId, updateData, useLiveCloud = true) {
   if (useLiveCloud && isCloudConfigured) {
     const res = await apiRequest(`/tenants/${tenantId}/projects/${projectId}`, 'PUT', updateData);
     return res.project;
@@ -419,7 +310,7 @@ export async function updateProject(tenantId, projectId, updateData, useLiveClou
   return allProjects[idx];
 }
 
-export async function deleteProject(tenantId, projectId, useLiveCloud = false) {
+export async function deleteProject(tenantId, projectId, useLiveCloud = true) {
   if (useLiveCloud && isCloudConfigured) {
     return await apiRequest(`/tenants/${tenantId}/projects/${projectId}`, 'DELETE');
   }
@@ -441,10 +332,9 @@ export async function deleteProject(tenantId, projectId, useLiveCloud = false) {
 }
 
 // =============================================================================
-// VIVA & DEMO ISOLATION SIMULATOR
-// Directly demonstrates cross-tenant attack rejection
+// ISOLATION ATTACK SIMULATOR (VIVA EVALUATION TOOL)
 // =============================================================================
-export async function simulateCrossTenantAttack(targetTenantId, useLiveCloud = false) {
+export async function simulateCrossTenantAttack(targetTenantId, useLiveCloud = true) {
   if (useLiveCloud && isCloudConfigured) {
     try {
       await apiRequest(`/tenants/${targetTenantId}/projects`, 'GET');
@@ -457,7 +347,7 @@ export async function simulateCrossTenantAttack(targetTenantId, useLiveCloud = f
       return {
         blocked: true,
         status: err.status || 403,
-        message: err.message || 'Access Denied: 403 Forbidden properly returned by backend.',
+        message: err.message || 'Access Denied: 403 Forbidden properly returned by AWS Lambda backend.',
       };
     }
   }

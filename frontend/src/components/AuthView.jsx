@@ -10,6 +10,7 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [showDemoTools, setShowDemoTools] = useState(false);
 
   const handleSignIn = async (e) => {
     e?.preventDefault();
@@ -40,7 +41,7 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
     setLoading(true);
     try {
       await register({ email, password, useLiveCloud });
-      setSuccessMsg('Registration successful! Check your email for verification code.');
+      setSuccessMsg('Registration successful! Please check your email for the verification code.');
       setMode('confirm');
     } catch (err) {
       setError(err.message || 'Registration failed');
@@ -64,7 +65,6 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
     }
   };
 
-  // Quick Persona login for college demonstration
   const loginAsDemoPersona = (demoEmail) => {
     setEmail(demoEmail);
     setPassword('DemoPass123!');
@@ -80,32 +80,11 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="auth-badge">Cloud Computing Project Demo</div>
-          <h2>CloudTenant Platform</h2>
+          <div className="auth-badge">Enterprise Cloud Platform</div>
+          <h2>CloudTenant</h2>
           <p className="auth-subtitle">
-            Enterprise Multi-Tenant SaaS with Strict Backend Data Isolation
+            Secure Multi-Tenant SaaS Management Platform
           </p>
-        </div>
-
-        {/* Demo Persona Shortcuts for Evaluation */}
-        <div className="demo-personas-box">
-          <span className="demo-title">⚡ Quick College Demo Login:</span>
-          <div className="persona-buttons">
-            <button
-              type="button"
-              className="btn-persona"
-              onClick={() => loginAsDemoPersona('alex.cloud@acme.edu')}
-            >
-              🏢 Tenant A (Acme Corp Owner)
-            </button>
-            <button
-              type="button"
-              className="btn-persona"
-              onClick={() => loginAsDemoPersona('beta.researcher@betalabs.com')}
-            >
-              🔒 Tenant B (Beta Labs Isolated)
-            </button>
-          </div>
         </div>
 
         <div className="auth-tabs">
@@ -115,6 +94,7 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
             onClick={() => {
               setMode('signin');
               setError('');
+              setSuccessMsg('');
             }}
           >
             Sign In
@@ -125,9 +105,10 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
             onClick={() => {
               setMode('signup');
               setError('');
+              setSuccessMsg('');
             }}
           >
-            Register
+            Create Organization Account
           </button>
           {mode === 'confirm' && (
             <button type="button" className="tab-btn active">
@@ -164,7 +145,7 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Authenticating via Cognito...' : 'Sign In to Dashboard'}
+              {loading ? 'Authenticating via Amazon Cognito...' : 'Sign In'}
             </button>
           </form>
         )}
@@ -187,7 +168,7 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
               <input
                 type="password"
                 required
-                placeholder="At least 8 chars (letters + numbers)"
+                placeholder="At least 8 chars (Uppercase, lowercase, number)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -205,7 +186,7 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Creating Account in Cognito...' : 'Create Account'}
+              {loading ? 'Registering with Amazon Cognito...' : 'Register Organization Account'}
             </button>
           </form>
         )}
@@ -217,21 +198,54 @@ export default function AuthView({ onAuthSuccess, useLiveCloud }) {
               <input
                 type="text"
                 required
-                placeholder="6-digit code"
+                placeholder="Enter 6-digit code sent to your email"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
               />
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Verifying with Cognito...' : 'Confirm Email'}
+              {loading ? 'Verifying with Cognito...' : 'Confirm Account'}
             </button>
           </form>
         )}
 
+        {/* Discreet Examiner / Viva tools at bottom */}
+        <div className="examiner-tools-accordion">
+          <button
+            type="button"
+            className="btn-toggle-examiner"
+            onClick={() => setShowDemoTools(!showDemoTools)}
+          >
+            {showDemoTools ? '▲ Hide Quick Demo Personas' : '▼ Examiner Quick Demo Personas (Optional)'}
+          </button>
+
+          {showDemoTools && (
+            <div className="demo-personas-box">
+              <span className="demo-title">Simulate Pre-Seeded Tenants:</span>
+              <div className="persona-buttons">
+                <button
+                  type="button"
+                  className="btn-persona"
+                  onClick={() => loginAsDemoPersona('alex.cloud@acme.edu')}
+                >
+                  🏢 Tenant A (Acme Corp Owner)
+                </button>
+                <button
+                  type="button"
+                  className="btn-persona"
+                  onClick={() => loginAsDemoPersona('beta.researcher@betalabs.com')}
+                >
+                  🔒 Tenant B (Beta Labs Isolated)
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="auth-footer">
           <small>
-            Amazon Cognito JWT Authorizer • DynamoDB Partition Keys • Node.js 24.x • ap-south-1
+            Powered by Amazon Cognito • DynamoDB Single-Table • AWS Lambda Node.js 24.x • ap-south-1
           </small>
         </div>
       </div>

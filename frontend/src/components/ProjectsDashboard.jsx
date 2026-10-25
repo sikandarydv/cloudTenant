@@ -5,6 +5,7 @@ export default function ProjectsDashboard({
   projects,
   loading,
   error,
+  onOpenCreateTenant,
   onOpenCreateProject,
   onOpenEditProject,
   onDeleteProject,
@@ -58,6 +59,28 @@ export default function ProjectsDashboard({
         return '';
     }
   };
+
+  if (!tenant) {
+    return (
+      <div className="dashboard-container">
+        <div className="empty-state onboarding-card">
+          <div className="empty-icon">🏢</div>
+          <h2>Welcome to CloudTenant!</h2>
+          <p className="onboarding-text">
+            You are logged in, but you don't belong to any organization yet.
+            Create your first tenant organization to begin managing your cloud projects.
+          </p>
+          <button
+            type="button"
+            className="btn-primary btn-large"
+            onClick={onOpenCreateTenant}
+          >
+            + Create Organization (Tenant)
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">

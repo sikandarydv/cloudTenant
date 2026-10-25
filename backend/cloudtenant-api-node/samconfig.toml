@@ -17,7 +17,9 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-region = "ap-south-1"
+s3_prefix = "cloudtenant-api-node"
+parameter_overrides = "TableName=\"CloudTenantData\""
+image_repositories = []
 
 [default.package.parameters]
 resolve_s3 = true

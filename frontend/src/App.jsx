@@ -13,6 +13,7 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  isCloudConfigured,
 } from './services/api';
 import './App.css';
 
@@ -30,7 +31,7 @@ export default function App() {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
-  const [useLiveCloud, setUseLiveCloud] = useState(false);
+  const [useLiveCloud, setUseLiveCloud] = useState(() => isCloudConfigured);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -187,6 +188,7 @@ export default function App() {
             projects={projects}
             loading={loading}
             error={error}
+            onOpenCreateTenant={() => setIsTenantModalOpen(true)}
             onOpenCreateProject={() => {
               setEditingProject(null);
               setIsProjectModalOpen(true);
