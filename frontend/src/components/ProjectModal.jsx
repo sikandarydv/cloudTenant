@@ -101,7 +101,7 @@ export default function ProjectModal({
           </div>
 
           <div className="form-group">
-            <label>Allocated Budget ($ USD)</label>
+            <label>Allocated Budget (₹ USD)</label>
             <input
               type="number"
               min="0"
